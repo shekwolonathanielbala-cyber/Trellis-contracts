@@ -12,7 +12,7 @@ pub struct StateSnapshot {
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum StaleStateReason { WalletChanged, ApiChanged, LedgerAdvanced }
+pub enum StaleStateReason { NoReason, WalletChanged, ApiChanged, LedgerAdvanced }
 
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -22,7 +22,7 @@ pub enum RecoveryAction { RefreshWallet, RefreshApi, ReSimulate, RestartFlow }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct StaleStateReport {
     pub stale: bool,
-    pub reason: Option<StaleStateReason>,
+    pub reason: StaleStateReason,
     pub recovery: RecoveryAction,
 }
 
@@ -31,15 +31,15 @@ pub struct StaleStateReport {
 /// when wallet and API revisions are unchanged.
 pub fn detect(prepared: StateSnapshot, current: StateSnapshot) -> StaleStateReport {
     if current.ledger_sequence != prepared.ledger_sequence {
-        return StaleStateReport { stale: true, reason: Some(StaleStateReason::LedgerAdvanced), recovery: RecoveryAction::ReSimulate };
+        return StaleStateReport { stale: true, reason: StaleStateReason::LedgerAdvanced, recovery: RecoveryAction::ReSimulate };
     }
     if current.wallet_revision != prepared.wallet_revision {
-        return StaleStateReport { stale: true, reason: Some(StaleStateReason::WalletChanged), recovery: RecoveryAction::RefreshWallet };
+        return StaleStateReport { stale: true, reason: StaleStateReason::WalletChanged, recovery: RecoveryAction::RefreshWallet };
     }
     if current.api_revision != prepared.api_revision {
-        return StaleStateReport { stale: true, reason: Some(StaleStateReason::ApiChanged), recovery: RecoveryAction::RefreshApi };
+        return StaleStateReport { stale: true, reason: StaleStateReason::ApiChanged, recovery: RecoveryAction::RefreshApi };
     }
-    StaleStateReport { stale: false, reason: None, recovery: RecoveryAction::RestartFlow }
+    StaleStateReport { stale: false, reason: StaleStateReason::NoReason, recovery: RecoveryAction::RestartFlow }
 }
 
 #[cfg(test)]
@@ -51,7 +51,7 @@ mod tests {
     fn unchanged_snapshot_is_safe_to_continue() {
         let report = detect(snapshot(), snapshot());
         assert!(!report.stale);
-        assert_eq!(report.reason, None);
+        assert_eq!(report.reason, StaleStateReason::NoReason);
     }
 
     #[test]
@@ -73,7 +73,7 @@ mod tests {
         let prepared = snapshot();
         let current = StateSnapshot { wallet_revision: 5, api_revision: 10, ledger_sequence: 101 };
         let report = detect(prepared, current);
-        assert_eq!(report.reason, Some(StaleStateReason::LedgerAdvanced));
+        assert_eq!(report.reason, StaleStateReason::LedgerAdvanced);
         assert_eq!(report.recovery, RecoveryAction::ReSimulate);
     }
 }

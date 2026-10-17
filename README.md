@@ -62,6 +62,7 @@
 | [docs/SECURITY_INVARIANTS.md](docs/SECURITY_INVARIANTS.md) | Formal protocol invariants (token conservation, referral acyclicity, oracle quorum/staleness, admin non-revocability) with the code and error variant that enforces each one |
 | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) | Trust assumptions, adversarial attack vectors per contract family, and pause/emergency-response pointers |
 | [docs/SYNTHETIC_JOURNEY_MONITOR.md](docs/SYNTHETIC_JOURNEY_MONITOR.md) | Runnable fund/quote/settle synthetic monitor, failure attribution, and recovery guidance |
+| [docs/AUDIT_LEDGER.md](docs/AUDIT_LEDGER.md) | Hash-chained, exportable audit ledger for privileged and financial events: encoding spec, verification recipes, edge cases, failure modes, and recovery |
 - Storage Layout
 - Documentation
 - Contribution Guide

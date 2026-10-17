@@ -1033,6 +1033,65 @@ impl TreasuryContract {
         shared::timeline::action_audit_trail(&env, &maintainer, limit)
     }
 
+    // -----------------------------------------------------------------------
+    // Tamper-evident audit ledger
+    // -----------------------------------------------------------------------
+
+    /// Returns the audit-ledger head: number of sealed entries and the newest
+    /// hash. Public and bounded: it exposes no entry payloads.
+    pub fn audit_ledger_head(env: Env) -> shared::AuditLedgerHead {
+        shared::audit_ledger::head(&env)
+    }
+
+    /// Verifies a page of the hash chain, starting at `from_seq`.
+    ///
+    /// Public: the result contains only pass/fail metadata and the first
+    /// offending sequence, never entry contents. Loop on `resume_at` until
+    /// `complete` is `true` for a full verification.
+    pub fn verify_audit_ledger(
+        env: Env,
+        from_seq: u64,
+        limit: u32,
+    ) -> Result<shared::AuditLedgerVerification, Error> {
+        shared::audit_ledger::verify_range(&env, from_seq, limit)
+    }
+
+    /// Verifies the stored checkpoints written by `seal_audit_ledger`.
+    ///
+    /// Complements `verify_audit_ledger`: the range scan proves every link,
+    /// anchors prove a specific historical head survived a truncation.
+    pub fn verify_audit_ledger_anchors(
+        env: Env,
+        from_id: u64,
+        limit: u32,
+    ) -> Result<shared::AuditAnchorVerification, Error> {
+        shared::audit_ledger::verify_anchors(&env, from_id, limit)
+    }
+
+    /// Exports a bounded page of full audit-ledger entries, newest head
+    /// included. Admin only: entries carry actor addresses and financial
+    /// state, matching the existing `audit_trail` access policy.
+    pub fn export_audit_ledger(
+        env: Env,
+        maintainer: Address,
+        cursor: Option<u64>,
+        limit: u32,
+    ) -> Result<shared::AuditLedgerExport, Error> {
+        shared::audit_ledger::export(&env, &maintainer, cursor, limit)
+    }
+
+    /// Writes a checkpoint of the current chain head. Admin only.
+    ///
+    /// Recommended before migrations, upgrades, key rotation or any operation
+    /// that touches persistent storage, so a later rollback is provable.
+    pub fn seal_audit_ledger(
+        env: Env,
+        caller: Address,
+    ) -> Result<shared::AuditLedgerAnchor, Error> {
+        auth::require_admin(&env, &caller)?;
+        shared::audit_ledger::seal(&env)
+    }
+
     /// Reset quota usage for an actor/resource pair (admin override path).
     pub fn reset_quota(
         env: Env,
@@ -1128,8 +1187,7 @@ fn invoke_strategy_deposit(
         (token.clone(), amount).into_val(env),
     ) {
         Ok(Ok(())) => Ok(()),
-        Ok(Err(error)) | Err(Ok(error)) => Err(error),
-        Err(Err(_)) => Err(Error::InvalidArgument),
+        _ => Err(Error::InvalidArgument),
     }
 }
 
@@ -1147,8 +1205,7 @@ fn invoke_strategy_withdraw(
         (token.clone(), recipient.clone(), amount).into_val(env),
     ) {
         Ok(Ok(received)) => Ok(received),
-        Ok(Err(error)) | Err(Ok(error)) => Err(error),
-        Err(Err(_)) => Err(Error::InvalidArgument),
+        _ => Err(Error::InvalidArgument),
     }
 }
 
@@ -1164,8 +1221,7 @@ fn invoke_strategy_harvest(
         (token.clone(), env.current_contract_address()).into_val(env),
     ) {
         Ok(Ok(earned)) => Ok(earned),
-        Ok(Err(error)) | Err(Ok(error)) => Err(error),
-        Err(Err(_)) => Err(Error::InvalidArgument),
+        _ => Err(Error::InvalidArgument),
     }
 }
 

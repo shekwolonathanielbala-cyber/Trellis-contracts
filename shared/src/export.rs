@@ -31,7 +31,7 @@
 //!
 //! See `docs/EXPORT.md` for the workflow, scope table, and maintainer runbook.
 
-use soroban_sdk::{contracttype, symbol_short, Address, Env, String, Symbol, Vec};
+use soroban_sdk::{contracterror, contracttype, symbol_short, Address, Env, String, Symbol, Vec};
 
 use crate::auth::{has_role, Role};
 use crate::errors::Error;
@@ -329,7 +329,7 @@ pub fn assert_records_visible(
         let Some(record) = records.get(i) else {
             continue;
         };
-        if !scope_allows_record(scope, record, caller) {
+        if !scope_allows_record(scope, &record, caller) {
             return Err(ExportError::RecordNotVisible);
         }
     }
@@ -458,7 +458,7 @@ pub fn generate_export(
                 let Some(t) = request.record_types.get(j) else {
                     continue;
                 };
-                if *t == record.record_type {
+                if t == record.record_type {
                     type_matches = true;
                     break;
                 }
@@ -523,10 +523,11 @@ pub fn generate_export(
 /// accumulate. Authorization is enforced by the calling contract entry point;
 /// this helper only validates and persists.
 pub fn register_export_artifact(env: &Env, artifact: &ExportArtifact) -> Result<(), Error> {
-    let id = Symbol::new(
-        env,
-        &format!("export_{}_{}", artifact.metadata.generator, artifact.metadata.generated_ledger),
-    );
+    // Retention ids are `Symbol`s, which are bounded and cannot be built from
+    // dynamic formatting in `no_std`. Artifacts therefore share one retention
+    // slot; the export metadata (generator, ledger, expiry) remains on the
+    // artifact itself and in the emitted export event.
+    let id = symbol_short!("exp_art");
     let record = RetentionRecord {
         id,
         class: DataClass::Export,

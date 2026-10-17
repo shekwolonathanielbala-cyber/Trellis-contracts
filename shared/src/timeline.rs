@@ -695,6 +695,22 @@ fn write_action_audit_entry(
         timestamp: env.ledger().timestamp(),
     };
     persistent_set(env, &TimelineKey::ActionAuditEntry(entry.seq), &entry);
+    // Seal the structured action into the tamper-evident chain. This is the
+    // single choke point for privileged and financial domain actions, so
+    // every module that records one gets hash-chain coverage without changing
+    // its own storage layout or public API. See `crate::audit_ledger`.
+    crate::audit_ledger::append(
+        env,
+        entry.event_type.clone(),
+        entry.actor.clone(),
+        entry.scope.clone(),
+        entry.action.clone(),
+        entry.reason.clone(),
+        entry.resource.clone(),
+        entry.attribute.clone(),
+        entry.before,
+        entry.after,
+    )?;
     env.events().publish(
         (symbol_short!("timeline"), symbol_short!("audit")),
         (entry.seq, entry.event_type.clone(), entry.link.clone()),

@@ -6848,9 +6848,3 @@ fn lifecycle_scheduled_positive_amount_and_expired_window_terminal_and_recovery_
         Ok(())
     );
     assert_eq!(client.category_balance(&token, &category), 400);
-}
-
-/// Terminal state: a scheduled action with a zero amount and malformed window
-/// is rejected. Recovery: a positive amount and well-formed window succeeds.
-#[test]
-fn lifecycle_scheduled_zero_amount_and_malformed_window_terminal_and_recovery_8

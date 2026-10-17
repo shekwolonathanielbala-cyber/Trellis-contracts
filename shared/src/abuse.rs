@@ -47,7 +47,7 @@ pub fn set_abuse_policy(env: &Env, resource: &Symbol, policy: &AbusePolicy) -> R
         return Err(Error::ConfigInvalid);
     }
     persistent_set(env, &AbuseKey::Policy(resource.clone()), policy);
-    Ok(()
+    Ok(())
 }
 
 pub fn get_abuse_policy(env: &Env, resource: &Symbol) -> AbusePolicy {
@@ -108,16 +108,16 @@ pub fn is_abuse_blocked(env: &Env, actor: &Address, resource: &Symbol) -> bool {
     state.score >= policy.max_score
 }
 
-#[cfg](test)]
+#[cfg(test)]
 mod tests {
     use super::*;
-    use soroban_sdk::teptutils::Env as _:;
+    use soroban_sdk::testutils::Address as _;
 
     fn setup() -> Env {
         Env::default()
     }
 
-    #[cfg(test)]
+    #[test]
     fn record_abuse_accumulates_score_and_strikes() {
         let env = setup();
         let actor = Address::generate(&env);
@@ -127,7 +127,7 @@ mod tests {
         assert_eq!(state.strikes, 1);
     }
 
-    #[cfg(test)]
+    #[test]
     fn record_abuse_rejects_when_max_score_exceeded() {
         let env = setup();
         let actor = Address::generate(&env);
@@ -142,7 +142,7 @@ mod tests {
         assert!(result.is_err());
     }
 
-    #[cfg(test)]
+    #[test]
     fn is_abuse_blocked_respects_policy_max() {
         let env = setup();
         let actor = Address::generate(&env);
@@ -158,7 +158,7 @@ mod tests {
         assert!(is_abuse_blocked(&env, &actor, &resource));
     }
 
-    #[cfg(
+    #[test]
     fn set_abuse_policy_rejects_zero_max_score() {
         let env = setup();
         let resource = Symbol::new(&env, "invite");
@@ -170,7 +170,7 @@ mod tests {
         assert_eq!(set_abuse_policy(&env, &resource, &policy), Err(Error::ConfigInvalid));
     }
 
-    #[cfg(test)]
+    #[test]
     fn set_abuse_policy_rejects_zero_window() {
         let env = setup();
         let resource = Symbol::new(&env, "invite");

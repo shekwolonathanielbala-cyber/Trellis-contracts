@@ -359,7 +359,7 @@ pub fn detect_index_drift(
             canonical_value: current_ledger as i128,
             projected_value: last_update_ledger as i128,
             lag_ledgers: lag,
-            detail: symbol_short!("lag_exceed"),
+            detail: Symbol::new(env, "lag_exceed"),
         });
     }
 
@@ -386,7 +386,7 @@ pub fn detect_index_drift(
                 canonical_value: 1,
                 projected_value: 0,
                 lag_ledgers: lag,
-                detail: symbol_short!("missing_id"),
+                detail: Symbol::new(env, "missing_id"),
             });
         }
         i += 1;
@@ -486,9 +486,9 @@ pub fn detect_cache_drift(
             projected_value: cached_value,
             lag_ledgers: lag,
             detail: if is_financial_balance {
-                symbol_short!("fin_diverg")
+                symbol_short!("fin_div")
             } else {
-                symbol_short!("cnt_diverg")
+                symbol_short!("cnt_div")
             },
         })
     } else if lag > max_lag_ledgers {
@@ -672,7 +672,7 @@ pub fn execute_or_queue_projection_repair(
 
         if quarantined_count > 0 {
             env.events().publish(
-                (symbol_short!("proj_rep"), symbol_short!("quarantine")),
+                (symbol_short!("proj_rep"), Symbol::new(env, "quarantine")),
                 (module.as_symbol(), receipt_id, quarantined_count),
             );
         }
@@ -756,7 +756,7 @@ pub fn process_queued_repair(
         outcome: RepairActionOutcome::RepairedImmediately,
         prior_projected_value: queued.item.projected_value,
         new_projected_value: queued.item.canonical_value,
-        details: symbol_short!("worker_fix"),
+        details: Symbol::new(env, "worker_fix"),
     };
 
     env.events().publish(

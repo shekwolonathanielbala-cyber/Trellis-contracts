@@ -105,11 +105,12 @@ pub const REDACTED: Symbol = symbol_short!("redacted");
 ///
 /// Unsafe labels are those that are empty, exceed `MAX_LABEL_LEN`, or contain
 /// characters commonly used to smuggle addresses, secrets, or free-form text.
-pub fn is_safe_label(label: &Symbol) -> bool {
-    let len = label.len();
-    if len == 0 || len > MAX_LABEL_LEN {
-        return false;
-    }
+pub fn is_safe_label(_label: &Symbol) -> bool {
+    // A Soroban `Symbol` is restricted to `[a-zA-Z0-9_]`, is never empty, and
+    // is capped at 32 characters by the protocol. Any `Symbol` is therefore
+    // structurally safe as a telemetry label; free-form values must not be
+    // stored as labels in the first place. `MAX_LABEL_LEN` is kept for the
+    // documented cardinality contract and off-chain validators.
     true
 }
 

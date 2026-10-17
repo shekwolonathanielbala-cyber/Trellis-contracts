@@ -42,9 +42,9 @@ pub fn validate_event(
     schema: &EventSchema,
     payload: &Map<Symbol, Val>,
 ) -> Result<(), EventValidationError> {
-    if schema.name.is_empty() {
-        return Err(EventValidationError::EmptyName);
-    }
+    // `Symbol` cannot be empty (`Symbol::new` rejects the empty string), so
+    // the former `is_empty` guard is unreachable. The `EmptyName` variant is
+    // retained for API compatibility.
     if schema.version == 0 {
         return Err(EventValidationError::UnsupportedVersion);
     }

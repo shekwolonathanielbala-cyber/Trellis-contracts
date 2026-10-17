@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `shared::audit_ledger`: a hash-chained, tamper-evident ledger for privileged and financial events. Every `record_action_audit_event` call — the choke point used by treasury, aid, referral, oracle and access control — seals one entry, and treasury exposes `audit_ledger_head`, `verify_audit_ledger`, `verify_audit_ledger_anchors`, `export_audit_ledger` and `seal_audit_ledger` entrypoints (#233); see `docs/AUDIT_LEDGER.md`
 - `shared::operational_metadata`: Data minimization review and retention enforcement for operational metadata across Treasury, Aid, Referral, Governance, Oracle, and Marketplace modules with classification, redundant field pruning, two-phase testable deletion, hold management, and migration adapters (#229); see `docs/OPERATIONAL_METADATA_RETENTION.md`
 - Two-step ownership transfer with pending acceptance and expiry in `shared::auth` and `contracts/access-control`, requiring explicit cryptographic acceptance by the target owner, supporting automatic expiry rejection, and allowing cancellation before acceptance (#150); see `docs/ACCESS_CONTROL.md`
 - `shared::lifecycle_events`: a canonical, versioned event envelope (`("lifecycle", resource, transition)` with schema version, resource ID, from/to state, actor, and timestamp) for every lifecycle transition, plus an ordered-sequence assertion harness (`testing::lifecycle_events`) that fails tests when an expected event is missing or reordered (#144); see `docs/LIFECYCLE_EVENTS.md`
@@ -29,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `shared`'s `health`, `reconciliation`, and `telemetry` modules were re-exported (`pub use health::{...}` etc.) without a matching `mod` declaration in `shared/src/lib.rs` — an unresolved-module compile error for the whole workspace. Added the three missing `pub mod` declarations.
+- Repaired the remaining pre-existing compilation breakage required to build and test the audit ledger: `shared/src/lib.rs` was truncated and carried corrupted tokens (`#`!no_std]`, `pubmod`, `pub use x:{`, a stray `.`, references to non-existent `golden` modules, duplicate root re-exports); `shared` used `symbol_short!` literals longer than the 9-character limit; `Option<Enum>` fields in `#[contracttype]` structs are unsupported by SDK spec generation, so `RollbackVerificationReceipt.anomaly` and `StaleStateReport.reason` use explicit `NoAnomaly`/`NoReason` variants; `RollbackVerificationReceipt.consecutive_failures_at_rollback` was renamed to `consecutive_failures_at_rb` to satisfy the 30-character contracttype field limit; `treasury-contract`'s strategy-invocation error arms did not type-check against `try_invoke_contract`, and its unit-test file was truncated mid-function.
 
 ---
 

@@ -97,5 +97,14 @@
     "migration_notes": "",
     "issue": 253,
     "pr": null
+  },
+  {
+    "version": "unreleased",
+    "date": "2026-10-17",
+    "impact": "compatible",
+    "summary": "Added shared::audit_ledger: a hash-chained, exportable audit ledger sealing every privileged and financial action-audit event, with treasury verify/export/seal entrypoints and an (\"audit\",\"aud_seal\") event (Issue #233).",
+    "migration_notes": "",
+    "issue": 233,
+    "pr": null
   }
 ]

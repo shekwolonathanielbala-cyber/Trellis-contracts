@@ -202,6 +202,7 @@ pub fn format_client_error(
         ErrorDomain::Registry => symbol_short!("reg"),
         ErrorDomain::Upgradeability => symbol_short!("upg"),
         ErrorDomain::Import => symbol_short!("import"),
+        ErrorDomain::Export => symbol_short!("export"),
     };
 
     let cat_sym = match info.category {

@@ -800,7 +800,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params);
@@ -825,7 +825,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &unauthorized, params);
@@ -849,7 +849,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: MAX_SESSION_DURATION + 1,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params);
@@ -873,7 +873,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: 10, // 10 seconds
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params).unwrap();
@@ -903,7 +903,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params).unwrap();
@@ -947,7 +947,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false, // Dangerous mutations not allowed
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params).unwrap();
@@ -984,7 +984,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params).unwrap();
@@ -1022,7 +1022,7 @@ mod tests {
             resource_scopes,
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params).unwrap();
@@ -1066,7 +1066,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let _ = create_session(&env, &support, params).unwrap();
@@ -1101,7 +1101,7 @@ mod tests {
                 resource_scopes: Vec::new(&env),
                 duration_sec: DEFAULT_SESSION_DURATION,
                 allow_dangerous_mutations: false,
-                reason: symbol_short!("debug_issue"),
+                reason: Symbol::new(env, "debug_issue"),
             };
             let _ = create_session(&env, &support, params).unwrap();
         }
@@ -1114,7 +1114,7 @@ mod tests {
             resource_scopes: Vec::new(&env),
             duration_sec: DEFAULT_SESSION_DURATION,
             allow_dangerous_mutations: false,
-            reason: symbol_short!("debug_issue"),
+            reason: Symbol::new(env, "debug_issue"),
         };
 
         let result = create_session(&env, &support, params);

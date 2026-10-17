@@ -152,6 +152,8 @@ pub enum StateAnomalyKind {
     StalePriceOrQuorumDeficit,
     /// Listing escrow balance does not match active inventory.
     EscrowMismatch,
+    /// Verification passed; no anomaly detected.
+    NoAnomaly,
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +221,7 @@ pub struct RollbackAuditRecord {
     pub reason: RollbackReason,
     pub triggered_ledger: u32,
     pub failing_error_code: u32,
-    pub consecutive_failures_at_rollback: u32,
+    pub consecutive_failures_at_rb: u32,
     pub total_invocations_at_rollback: u32,
     pub failed_invocations_at_rollback: u32,
 }
@@ -241,7 +243,7 @@ pub struct RollbackVerificationReceipt {
     /// Number of checks passed.
     pub checks_passed: u32,
     /// First detected anomaly, if verification failed.
-    pub anomaly: Option<StateAnomalyKind>,
+    pub anomaly: StateAnomalyKind,
 }
 
 /// Verification snapshot supplied to verify module-specific state invariants.
@@ -556,7 +558,7 @@ pub fn trigger_auto_rollback(
         reason,
         triggered_ledger: env.ledger().sequence(),
         failing_error_code,
-        consecutive_failures_at_rollback: metrics.consecutive_failures,
+        consecutive_failures_at_rb: metrics.consecutive_failures,
         total_invocations_at_rollback: metrics.total_invocations,
         failed_invocations_at_rollback: metrics.failed_invocations,
     };
@@ -601,14 +603,14 @@ pub fn verify_rollback(
 ) -> RollbackVerificationReceipt {
     let mut checks_evaluated = 0u32;
     let mut checks_passed = 0u32;
-    let mut detected_anomaly: Option<StateAnomalyKind> = None;
+    let mut detected_anomaly: StateAnomalyKind = StateAnomalyKind::NoAnomaly;
 
     // Check 1: Guard configuration disabled
     checks_evaluated += 1;
     let config = get_guard_config(env, target);
     if config.enabled {
-        if detected_anomaly.is_none() {
-            detected_anomaly = Some(StateAnomalyKind::FlagStillEnabled);
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
+            detected_anomaly = StateAnomalyKind::FlagStillEnabled;
         }
     } else {
         checks_passed += 1;
@@ -617,8 +619,8 @@ pub fn verify_rollback(
     // Check 2: Rollout weight zeroed
     checks_evaluated += 1;
     if config.rollout_bps != 0 {
-        if detected_anomaly.is_none() {
-            detected_anomaly = Some(StateAnomalyKind::RolloutBpsNotZeroed);
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
+            detected_anomaly = StateAnomalyKind::RolloutBpsNotZeroed;
         }
     } else {
         checks_passed += 1;
@@ -627,8 +629,8 @@ pub fn verify_rollback(
     // Check 3: Stage is marked as RolledBack
     checks_evaluated += 1;
     if config.stage != RolloutStage::RolledBack {
-        if detected_anomaly.is_none() {
-            detected_anomaly = Some(StateAnomalyKind::StageNotRolledBack);
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
+            detected_anomaly = StateAnomalyKind::StageNotRolledBack;
         }
     } else {
         checks_passed += 1;
@@ -639,8 +641,8 @@ pub fn verify_rollback(
         checks_evaluated += 1;
         let flag_cfg = get_flag(env, &flag);
         if flag_cfg.enabled || flag_cfg.rollout_bps != 0 {
-            if detected_anomaly.is_none() {
-                detected_anomaly = Some(StateAnomalyKind::FlagStillEnabled);
+            if detected_anomaly == StateAnomalyKind::NoAnomaly {
+                detected_anomaly = StateAnomalyKind::FlagStillEnabled;
             }
         } else {
             checks_passed += 1;
@@ -658,8 +660,8 @@ pub fn verify_rollback(
         }
     }
     if !routing_ok {
-        if detected_anomaly.is_none() {
-            detected_anomaly = Some(StateAnomalyKind::LegacyFallbackBypassed);
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
+            detected_anomaly = StateAnomalyKind::LegacyFallbackBypassed;
         }
     } else {
         checks_passed += 1;
@@ -668,8 +670,8 @@ pub fn verify_rollback(
     // Check 6: Solvency & reserve backing
     checks_evaluated += 1;
     if !snapshot.reserves_solvent {
-        if detected_anomaly.is_none() {
-            detected_anomaly = Some(StateAnomalyKind::SolvencyDiscrepancy);
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
+            detected_anomaly = StateAnomalyKind::SolvencyDiscrepancy;
         }
     } else {
         checks_passed += 1;
@@ -678,8 +680,8 @@ pub fn verify_rollback(
     // Check 7: No orphaned or half-committed records
     checks_evaluated += 1;
     if !snapshot.records_consistent {
-        if detected_anomaly.is_none() {
-            detected_anomaly = Some(StateAnomalyKind::OrphanedPartialRecord);
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
+            detected_anomaly = StateAnomalyKind::OrphanedPartialRecord;
         }
     } else {
         checks_passed += 1;
@@ -688,19 +690,19 @@ pub fn verify_rollback(
     // Check 8: Module-specific state invariant integrity
     checks_evaluated += 1;
     if !snapshot.invariants_intact {
-        if detected_anomaly.is_none() {
+        if detected_anomaly == StateAnomalyKind::NoAnomaly {
             detected_anomaly = match snapshot.module {
-                RolloutModule::Governance => Some(StateAnomalyKind::TallyMismatch),
-                RolloutModule::Oracle => Some(StateAnomalyKind::StalePriceOrQuorumDeficit),
-                RolloutModule::Marketplace => Some(StateAnomalyKind::EscrowMismatch),
-                _ => Some(StateAnomalyKind::SolvencyDiscrepancy),
+                RolloutModule::Governance => StateAnomalyKind::TallyMismatch,
+                RolloutModule::Oracle => StateAnomalyKind::StalePriceOrQuorumDeficit,
+                RolloutModule::Marketplace => StateAnomalyKind::EscrowMismatch,
+                _ => StateAnomalyKind::SolvencyDiscrepancy,
             };
         }
     } else {
         checks_passed += 1;
     }
 
-    let verified_clean = detected_anomaly.is_none() && (checks_passed == checks_evaluated);
+    let verified_clean = detected_anomaly == StateAnomalyKind::NoAnomaly && (checks_passed == checks_evaluated);
     let audit = get_last_rollback_audit(env, target);
     let rollback_reason = audit.map_or(RollbackReason::ManualTrigger, |a| a.reason);
 
@@ -910,7 +912,7 @@ mod tests {
             let audit = get_last_rollback_audit(&env, target).unwrap();
             assert_eq!(audit.reason, RollbackReason::ConsecutiveFailuresExceeded);
             assert_eq!(audit.failing_error_code, 701);
-            assert_eq!(audit.consecutive_failures_at_rollback, 3);
+            assert_eq!(audit.consecutive_failures_at_rb, 3);
         });
     }
 
@@ -986,7 +988,7 @@ mod tests {
 
             assert!(receipt.verified_clean);
             assert_eq!(receipt.checks_passed, receipt.checks_evaluated);
-            assert_eq!(receipt.anomaly, None);
+            assert_eq!(receipt.anomaly, StateAnomalyKind::NoAnomaly);
             assert!(is_rollback_verified(&env, target));
         });
     }
@@ -1013,7 +1015,7 @@ mod tests {
 
             let receipt = verify_rollback(&env, target, &dirty_snapshot);
             assert!(!receipt.verified_clean);
-            assert_eq!(receipt.anomaly, Some(StateAnomalyKind::SolvencyDiscrepancy));
+            assert_eq!(receipt.anomaly, StateAnomalyKind::SolvencyDiscrepancy);
             assert!(!is_rollback_verified(&env, target));
         });
     }

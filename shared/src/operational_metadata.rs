@@ -215,7 +215,7 @@ pub fn classify_field(module: OperationalModule, key: &Symbol) -> FieldSensitivi
     if key == &symbol_short!("wall_time")
         || key == &symbol_short!("client_ts")
         || key == &symbol_short!("ui_theme")
-        || key == &symbol_short!("client_ver")
+        || key == &symbol_short!("cli_ver")
         || key == &symbol_short!("peer_list")
         || key == &symbol_short!("dup_tag")
     {
@@ -233,7 +233,7 @@ pub fn classify_field(module: OperationalModule, key: &Symbol) -> FieldSensitivi
                 || key == &symbol_short!("seq")
             {
                 FieldSensitivity::Essential
-            } else if key == &symbol_short!("token_name") || key == &symbol_short!("memo_str") {
+            } else if key == &symbol_short!("tok_name") || key == &symbol_short!("memo_str") {
                 FieldSensitivity::Redundant
             } else {
                 FieldSensitivity::OptionalContext
@@ -263,7 +263,7 @@ pub fn classify_field(module: OperationalModule, key: &Symbol) -> FieldSensitivi
                 || key == &symbol_short!("commiss")
             {
                 FieldSensitivity::Essential
-            } else if key == &symbol_short!("campaign") || key == &symbol_short!("vanity_dup") {
+            } else if key == &symbol_short!("campaign") || key == &symbol_short!("van_dup") {
                 FieldSensitivity::Redundant
             } else {
                 FieldSensitivity::OptionalContext
@@ -277,9 +277,9 @@ pub fn classify_field(module: OperationalModule, key: &Symbol) -> FieldSensitivi
                 || key == &symbol_short!("quorum")
             {
                 FieldSensitivity::Essential
-            } else if key == &symbol_short!("prose_desc") || key == &symbol_short!("client_id") {
+            } else if key == &symbol_short!("prose_dsc") || key == &symbol_short!("client_id") {
                 FieldSensitivity::Redundant
-            } else if key == &symbol_short!("ballot_sec") {
+            } else if key == &symbol_short!("ballot_sc") {
                 FieldSensitivity::Prohibited
             } else {
                 FieldSensitivity::OptionalContext
@@ -861,11 +861,11 @@ mod tests {
             FieldSensitivity::Essential
         );
         assert_eq!(
-            classify_field(OperationalModule::Governance, &symbol_short!("prose_desc")),
+            classify_field(OperationalModule::Governance, &symbol_short!("prose_dsc")),
             FieldSensitivity::Redundant
         );
         assert_eq!(
-            classify_field(OperationalModule::Governance, &symbol_short!("ballot_sec")),
+            classify_field(OperationalModule::Governance, &symbol_short!("ballot_sc")),
             FieldSensitivity::Prohibited
         );
 
@@ -1209,7 +1209,7 @@ mod tests {
             let now = 50_000_000;
             env.ledger().set_sequence_number(now);
 
-            let id = symbol_short!("settle_rec");
+            let id = Symbol::new(env, "settle_rec");
             let rec = StoredOperationalMetadata {
                 id: id.clone(),
                 module: OperationalModule::Treasury,

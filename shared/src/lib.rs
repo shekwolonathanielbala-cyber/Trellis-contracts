@@ -1,10 +1,8 @@
-#`!no_std]
-
-pubmod golden;
-pubmod golden_fixtures;
+#![no_std]
 
 pub mod abuse;
 pub mod analytics;
+pub mod audit_ledger;
 pub mod auth;
 pub mod backfill;
 pub mod batch;
@@ -56,10 +54,17 @@ pub mod utils;
 pub mod webhook;
 
 // Re-export the most commonly-needed items at crate root for ergonomic use.
+pub use audit_ledger::{
+append as append_audit_entry, anchor_count as audit_anchor_count, entry_hash as audit_entry_hash,
+export as export_audit_ledger, get_anchor as get_audit_anchor, get_entry as get_audit_entry,
+head as audit_ledger_head, seal as seal_audit_ledger, verify_anchors as verify_audit_anchors,
+verify_range as verify_audit_range, AuditAnchorVerification, AuditLedgerAnchor, AuditLedgerEntry,
+AuditLedgerExport, AuditLedgerHead, AuditLedgerKey, AuditLedgerVerification, AuditTamperReason,
+AUDIT_LEDGER_VERSION, MAX_AUDIT_EXPORT_ENTRIES, MAX_AUDIT_VERIFY_ENTRIES,
+};
 pub use analytics::{
 aggregate_events, is_fully_suppressed, is_safe_dimension, is_sensitive_dimension,
 AggregateBucket, AnalyticsReport, PrivacyConfig, RawObservation, ANALYTICS_METRIC_VERSION,
-.
 };
 pub use auth::{
 accept_ownership_transfer, cancel_ownership_transfer, get_admin,
@@ -67,7 +72,7 @@ get_pending_ownership_transfer, has_permission, initialize_admin, propose_owners
 require_admin, require_not_paused, require_permission, role_for_permission, set_admin,
 PendingOwnershipTransfer, Permission, Role,
 };
-pub use backfill:{
+pub use backfill::{
 advance_checkpoint, begin_backfill, clear_checkpoint, complete_backfill, dry_run as dry_run_backfill,
 fail_backfill, is_resumable as is_backfill_resumable, load_checkpoint as load_backfill_checkpoint,
 save_checkpoint as save_backfill_checkpoint, BackfillAction, BackfillCheckpoint, BackfillError,
@@ -78,7 +83,7 @@ batch_invoke_no_args, execute_multi_invoke, execute_multi_transfer, multi_transf
 BatchConfig, BatchError, BatchMode, BatchResult, BatchTransfer, OperationResult,
 ABSOLUTE_MAX_BATCH_SIZE, DEFAULT_MAX_BATCH_SIZE,
 };
-pub use canonical:{
+pub use canonical::{
 canonical_bytes, canonical_fingerprint, canonicalize_legacy, ensure_supported_encoding,
 is_legacy_encoding, normalize_int, normalize_text, parse_legacy_kv, CanonicalPart,
 CANONICAL_ENCODING_VERSION, LEGACY_ENCODING_VERSION, MAX_FIELD_LEN,
@@ -89,7 +94,7 @@ ClientReceipt, CreateAidRequest, CreateEscrowRequest, CreateListingRequest,
 CreateProposalRequest, EscrowSummaryResponse, ListingSummaryResponse, OperationStatus,
 ProposalSummaryResponse, RebalanceRequest, RebalanceSummaryResponse, CLIENT_SCHEMA_VERSION,
 };
-pub use compat:{
+pub use compat::{
 current_schema_version, downgrade_v2_to_v1, ensure_supported_version, from_latest,
 is_deprecated_version, is_supported_version, migrate_v1_to_v2, new_current_record, to_latest,
 CompatAidStatus, CurrentAidRecord, LegacyAidRecord, VersionedAidRecord,
@@ -100,7 +105,7 @@ pub use config::{
 validate_feature_flag, validate_full_config, validate_network_id, validate_rpc_url,
 validate_secret_key, Environment, RedactedSecret,
 };
-pub use domain_events:{consumer_version, publish_event, validate_event, DomainEvent, EventSchema,
+pub use domain_events::{consumer_version, publish_event, validate_event, DomainEvent, EventSchema,
 EventValidationError};
 pub use dashboard::{
 add_external_reference, create_partial_failure, generate_dashboard,
@@ -112,9 +117,9 @@ RedactedDeadLetter, RedactedPartialFailure,
 pub use disclosure::{DetailField, DetailSeverity, TransactionDetail, TransactionDetailBuilder};
 pub use error_taxonomy::{describe_error, ErrorCategory, ErrorDomain, ErrorInfo};
 pub use errors::Error;
-pub use export:{
-authorize_export, create_export, ensure_supported_version, generate_export, is_safe_field,
-is_supported_version, redact_fields, register_export_artifact, scope_allows_record,
+pub use export::{
+authorize_export, create_export, generate_export, is_safe_field,
+redact_fields, register_export_artifact, scope_allows_record,
 assert_records_visible, ExportArtifact, ExportError, ExportField, ExportFormat,
 ExportMetadata, ExportRecord, ExportReport, ExportRequest, ExportScope, RecordSensitivity,
 ABSOLUTE_MAX_EXPORT_RECORDS, CURRENT_EXPORT_SCHEMA_VERSION, DEFAULT_EXPORT_TTL_LEDGERS,
@@ -131,7 +136,7 @@ PAYMENT_ESCROW_REFUNDED, PAYMENT_ESCROW_RELEASED, PAYMENT_FEE, PAYMENT_TRANSFER,
 REFERRAL_ACCRUED, REFERRAL_REGISTERED, REFERRER_SET, TIER_CONFIG_SET, TREASURY_DEPOSIT,
 TREASURY_EMERGENCY_WITHDRAW, TREASURY_SET, TREASURY_WITHDRAW,
 };
-pub use health:{
+pub use health::{
 get_dependency_health, list_dependency_health, set_dependency_health, DependencyHealth,
 DependencyStatus,
 };
@@ -142,7 +147,7 @@ revoke_session, validate_session, ImpersonationAction, ImpersonationError, Imper
 ImpersonationSession, ResourceScope, ResourceType, SessionParams, SessionResult, SessionState,
 DEFAULT_SESSION_DURATION, MAX_CONCURRENT_SESSIONS, MAX_SESSION_DURATION,
 };
-pub use import:{
+pub use import::{
 compute_batch_fingerprint, dry_run as dry_run_import, execute_import,
 generate_rollback_guidance, get_import_counter, get_imported_record, has_imported_record,
 validate_config as validate_import_config, DuplicatePolicy, ImportConfig, ImportError,
@@ -157,9 +162,9 @@ next_due_ledger, pause_worker, pending_job_ids, reprocess_job, requeue_dead_lett
 resume_worker, run_due_job, worker_config, BackoffMode, DeadLetterRecord, EnqueueOutcome, Job,
 JobCounters, JobError, JobHandler, JobKind, JobPayload, JobReceipt, JobStats, JobStatus,
 RetryPolicy, RunOutcome, WorkerConfig, WorkerKey, ESCROW_REFUND_TAG, JOB_DEAD_LETTERED,
-JOB_EQUEUED, JOB_REQUEUED, JOB_RETRIED, JOB_SUCCEEDED, JOB_TOPIC,
+JOB_ENQUEUED, JOB_REQUEUED, JOB_RETRIED, JOB_SUCCEEDED, JOB_TOPIC,
 };
-pub use lifecycle_events:{
+pub use lifecycle_events::{
 assert_lifecycle_sequence, emit_aid_event, emit_contract_record_event, emit_escrow_event,
 emit_lifecycle_transition, emit_proposal_event, emit_resource_transition, LifecycleEvent,
 LifecycleResource, LifecycleTransition, LIFECYCLE_EVENT_SCHEMA_VERSION, LIFECYCLE_TOPIC,
@@ -184,7 +189,7 @@ OperationalRetentionPolicy, RawMetadataField, StoredOperationalMetadata,
 };
 pub use pagination::{
 paginate_id_list, paginate_id_range, Direction, PageRequest, PageResponse, DEFAULT_MAX_SCAN,
-`DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT,
+DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT,
 };
 pub use payments::{
 calculate_fee, calculate_fee_split, create_escrow, deduct_fee, get_escrow, refund_escrow,
@@ -194,7 +199,7 @@ FeeConfig,
 pub use preflight::{
 preflight, require_preflight, requires_preflight, PreflightCheck, PreflightCode,
 PreflightInput, PreflightOperation, PreflightReport, PreflightStatus, RiskLevel,
-EXPIRY_WARNING_WINDOW_LEDGERS, HIGH_VALUE_WARNING_BPS.
+EXPIRY_WARNING_WINDOW_LEDGERS, HIGH_VALUE_WARNING_BPS,
 };
 pub use projection_repair::{
 default_monitor_config, detect_cache_drift, detect_index_drift,
@@ -226,7 +231,7 @@ pub use release_readiness::{
     RollbackRehearsalParams, RollbackRehearsalReceipt,
 };
 pub use replay::{consume_payload, ReplayKey, SignedPayload};
-pub use rollout_guard:{
+pub use rollout_guard::{
 default_guard_config, evaluate_rollout_guard, get_guard_config, get_health_metrics,
 get_last_rollback_audit, get_last_verification_receipt, init_or_update_guard,
 is_rollback_verified, rearm_after_verified_rollback, record_execution_outcome,
@@ -242,9 +247,17 @@ plan_cleanup, plan_cleanup_at, put_record, release_hold, set_retention_policy, C
 CleanupPlan, CleanupReport, DataClass, HoldReason, RetentionHold, RetentionPolicy,
 RetentionRecord, HOLD_INDEFINITE, LEDGERS_PER_DAY, MAX_RETAIN_LEDGERS,
 };
-pub use sanitize:{
+pub use sanitize::{
 sanitize_text, sanitize_url, trim_whitespace, validate_external_url, validate_safe_text,
 SafeScheme, MAX_TEXT_LEN, MAX_URL_LEN,
 };
-pub use semantic::
-val
+pub use semantic::{
+validate_amount, validate_distinct_parties, validate_future_expiry, AmountRule, ExpiryRule,
+};
+pub use timeline::{
+action_audit_trail, anonymous_viewer, append_user_event, audit_trail, can_view, delete_entry,
+entry_count, entry_exists, entry_is_redacted, is_maintainer, next_audit_seq, next_seq,
+record_action_audit_event, record_audit_event, redact_entry, timeline_page, viewer_for,
+ActionAuditEntry, AuditEntry, ResourceLink, TimelineEntry, TimelineEventType, TimelineKey,
+TimelinePage, Viewer, Visibility,
+};

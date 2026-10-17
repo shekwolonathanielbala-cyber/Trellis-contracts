@@ -281,7 +281,7 @@ fn test_group_by_retryability() {
     assert_eq!(retryable_group.count, 1);
     assert_eq!(retryable_group.retryable_count, 1);
     
-    let non_retryable_group = groups.iter().find(|g| g.value == symbol_short!("non_retryable")).unwrap();
+    let non_retryable_group = groups.iter().find(|g| g.value == Symbol::new(env, "non_retryable")).unwrap();
     assert_eq!(non_retryable_group.count, 2);
     assert_eq!(non_retryable_group.retryable_count, 0);
 }
